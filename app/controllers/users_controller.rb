@@ -16,9 +16,16 @@ class UsersController < ApplicationController
   end
 
   def show
+    @user = User.find(params[:id])
   end
 
   def edit
+    @user = User.find(params[:id])
+    if @user == current_user
+      render "edit"
+    else
+      redirect_to users_path
+    end
   end
 
   def update
@@ -37,5 +44,14 @@ class UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:name, :email, :password, :password_confirmation, :image, :image_cache)
+  end
+
+  def ensure_correct_user
+    @user = User.find_by(id: params[:id])
+    if @user.id != current_user.id
+      # ここでいきなりcurrent_userを使えるのは、sessions_helperがapplication_controllerにincludeされているから
+      flash[:notice] = "権限がありません"
+      redirect_to pictures_path
+    end
   end
 end

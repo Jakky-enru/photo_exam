@@ -1,5 +1,6 @@
 class PicturesController < ApplicationController
   before_action :set_picture, only: %i[ show edit update destroy ]
+  before_action :ensure_correct_user, only: [:edit, :update, :destroy]
 
   def index
     @pictures = Picture.all
@@ -18,6 +19,7 @@ class PicturesController < ApplicationController
     
     respond_to do |format|
       if @picture.save
+        ContactMailer.contact_mail(@picture).deliver_now
         format.html { redirect_to pictures_url, notice: "Picture was successfully created." }
         format.json { render :show, status: :created, location: @picture }
       else
@@ -68,5 +70,13 @@ class PicturesController < ApplicationController
 
     def picture_params
       params.require(:picture).permit(:content, :image, :image_cache)
+    end
+
+    def ensure_correct_user
+      @picture = Picture.find_by(id: params[:id])
+      if @current_user.id != @picture.user_id
+        flash[:notice] = "権限がありません"
+        redirect_to pictures_path
+      end
     end
 end
